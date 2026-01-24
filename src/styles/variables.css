@@ -1,0 +1,35 @@
+/* 定义全局 CSS 变量 - 异世界风格 */
+:root {
+  /* 主色调 - 奢华金与深邃紫 */
+  --color-primary: #ffd700;       /* 标题金 */
+  --color-primary-dark: #b8860b;
+  --color-secondary: #4a148c;     /* 贵族紫 */
+  --color-accent: #00e676;        /* 交互绿 (用于按钮/通过) */
+  --color-danger: #ff5252;
+  
+  /* 背景色 */
+  --bg-dark: #1a0b2e;
+  --bg-panel: rgba(0, 0, 0, 0.6);
+  
+  /* 文本色 */
+  --text-main: #ffffff;
+  --text-muted: #b0bec5;
+  
+  /* 间距系统 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  
+  /* 字体 */
+  --font-title: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-title);
+  overflow: hidden; /* 游戏通常不允许滚动 */
+}
