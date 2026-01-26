@@ -1,121 +1,176 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useGameStore } from './game'
 
 export const useMapStore = defineStore('map', () => {
-  // 状态
-  const currentFloor = ref(1)
-  const playerPos = ref({ x: 6, y: 10 }) // 初始在入口附近
+  const gameStore = useGameStore()
+  
+  // --- 状态 State ---
   const isMapActive = ref(false)
+  const currentFloor = ref(1) // 1, 2, 3
+  
+  // 玩家状态
+  const player = ref({
+    x: 4,
+    y: 4,
+    direction: 'down' // up, down, left, right
+  })
 
-  // 区域定义 (元数据)
-  const zoneMeta = {
-    0: { name: '墙壁', passable: false, color: 'transparent' },
-    1: { name: '厕所', passable: true, color: '#4a3b3b', desc: '味道不太好闻...' },
-    2: { name: '仓库', passable: true, color: '#3e2723', desc: '堆满了杂物。' },
-    3: { name: '酒客包厢', passable: true, color: '#5d4037', desc: '私密的谈话空间。' },
-    4: { name: '吟游诗人舞台', passable: true, color: '#795548', desc: '音乐从这里传来。' },
-    5: { name: '酒馆大厅', passable: true, color: '#8d6e63', desc: '热闹非凡，人声鼎沸。' },
-    6: { name: '吧台', passable: true, color: '#a1887f', desc: '酒保正在擦拭杯子。' },
-    7: { name: '厨房', passable: true, color: '#d7ccc8', desc: '闲人免进。' },
-    8: { name: '大门入口', passable: true, color: '#555', desc: '寒风呼啸。' },
-    9: { name: '吧台座位', passable: true, color: '#8d6e63', desc: '醉汉的栖息地。' }
-  }
+  // 交互状态
+  const showInteractionMenu = ref(false)
+  const currentTarget = ref(null) // 当前面对的 NPC 或物体
 
-  // 地图矩阵设计 (13x12)
-  // 对应你的手绘图布局
-  const floor1Matrix = [
-    [0, 0, 0, 2, 2, 2, 0, 3, 3, 3, 0, 0, 0], // Row 0
-    [1, 1, 1, 2, 2, 2, 0, 3, 3, 3, 0, 0, 0], // Row 1: 左厕所，中仓库，右酒客
-    [1, 1, 1, 0, 5, 5, 5, 5, 5, 0, 6, 6, 6], // Row 2: 厕所下沿，中间是大厅，右边吧台
-    [0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 6, 6, 6], // Row 3
-    [4, 4, 4, 0, 5, 5, 5, 5, 5, 0, 9, 9, 9], // Row 4: 左舞台，中大厅，右吧台座
-    [4, 4, 4, 0, 5, 5, 5, 5, 5, 0, 9, 9, 9], // Row 5
-    [4, 4, 4, 0, 5, 5, 5, 5, 5, 0, 9, 9, 9], // Row 6
-    [0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0], // Row 7
-    [7, 7, 7, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0], // Row 8: 左厨房
-    [7, 7, 7, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0], // Row 9
-    [7, 7, 7, 0, 8, 8, 8, 8, 8, 0, 0, 0, 0], // Row 10: 底部入口
-    [0, 0, 0, 0, 8, 8, 8, 8, 8, 0, 0, 0, 0]  // Row 11
+  // --- 地图数据 Data (Mock) ---
+  // 0: 空地/地板, 1: 墙壁, 2: 楼梯, 3: 装饰物
+  const mapSize = { w: 10, h: 10 } // 10x10 网格示例
+  
+  // 区域定义：用于顶部弹窗描述
+  // 格式: { floor, x1, y1, x2, y2, name, desc }
+  const zones = [
+    { 
+      floor: 1, x1: 0, y1: 0, x2: 9, y2: 6, 
+      name: '酒馆大厅', 
+      desc: '客似云来，波波看样子喝了很多。矮人们正在嚷嚷着要更烈的酒。' 
+    },
+    { 
+      floor: 1, x1: 0, y1: 7, x2: 4, y2: 9, 
+      name: '后厨通道', 
+      desc: '空气中弥漫着烤肉和香料的味道，厨师正在忙碌地备餐。' 
+    },
+    { 
+      floor: 2, x1: 0, y1: 0, x2: 9, y2: 9, 
+      name: '二楼客房区', 
+      desc: '这里相对安静，走廊里传来隐约的嬉笑声和床架的摇晃声。' 
+    }
   ]
 
-  const mapData = {
-    1: {
-      matrix: floor1Matrix,
-      width: 13,
-      height: 12,
-      stairs: [
-        { x: 2, y: 1, toFloor: 2, label: '上二楼' } // 假设厕所旁有楼梯
-      ]
-    }
-    // 二楼三楼稍后按同样逻辑定义
-  }
-
-  // NPC 位置 (精确坐标)
+  // NPC 数据
+  // type: 'guest' | 'staff' | 'girl'
   const npcs = ref([
-    { id: 'bartender', name: '酒保', floor: 1, x: 11, y: 3, type: 'staff', icon: '🍺' },
-    { id: 'girl_alice', name: '爱丽丝', floor: 1, x: 6, y: 5, type: 'girl', icon: '💃' }, // 大厅中间
-    { id: 'dwarf', name: '矮人', floor: 1, x: 5, y: 6, type: 'customer', icon: '🧔' }
+    { id: 'girl_1', name: '爱丽丝', type: 'girl', floor: 1, x: 5, y: 3, avatar: '👱‍♀️' },
+    { id: 'staff_1', name: '老约翰', type: 'staff', floor: 1, x: 2, y: 2, avatar: '🧔' },
+    { id: 'guest_1', name: '醉酒矮人', type: 'guest', floor: 1, x: 6, y: 5, avatar: '🍺' }
   ])
 
-  // 获取当前位置的格子类型
-  const currentTileType = computed(() => {
-    const floor = mapData[currentFloor.value]
-    if (!floor) return 0
-    const row = floor.matrix[playerPos.value.y]
-    return row ? row[playerPos.value.x] : 0
-  })
-
-  // 获取当前区域信息
-  const currentZoneDesc = computed(() => {
-    const type = currentTileType.value
-    return zoneMeta[type] || zoneMeta[0]
-  })
-
-  const currentInteractables = computed(() => {
-    // 检查 NPC (重叠或相邻)
-    const nearbyNPCs = npcs.value.filter(npc => 
-      npc.floor === currentFloor.value && 
-      Math.abs(npc.x - playerPos.value.x) <= 1 && 
-      Math.abs(npc.y - playerPos.value.y) <= 1
+  // --- Getters ---
+  
+  // 获取当前区域描述
+  const currentZoneInfo = computed(() => {
+    const p = player.value
+    const zone = zones.find(z => 
+      z.floor === currentFloor.value && 
+      p.x >= z.x1 && p.x <= z.x2 && 
+      p.y >= z.y1 && p.y <= z.y2
     )
-    
-    // 检查楼梯 (重叠)
-    const floor = mapData[currentFloor.value]
-    const stair = floor?.stairs?.find(s => s.x === playerPos.value.x && s.y === playerPos.value.y)
-
-    return { npcs: nearbyNPCs, stair }
+    return zone || { name: '未知区域', desc: '这里昏暗不清，没有什么特别的。' }
   })
 
-  function move(dx, dy) {
-    const floor = mapData[currentFloor.value]
-    const nextX = playerPos.value.x + dx
-    const nextY = playerPos.value.y + dy
+  // 获取玩家正前方的坐标
+  const facingCoords = computed(() => {
+    const { x, y, direction } = player.value
+    let targetX = x
+    let targetY = y
+    if (direction === 'up') targetY -= 1
+    if (direction === 'down') targetY += 1
+    if (direction === 'left') targetX -= 1
+    if (direction === 'right') targetX += 1
+    return { x: targetX, y: targetY }
+  })
 
-    // 1. 越界检查
-    if (nextX < 0 || nextX >= floor.width || nextY < 0 || nextY >= floor.height) return
+  // 检测正前方是否有可交互对象
+  const interactTarget = computed(() => {
+    const { x, y } = facingCoords.value
+    // 检查 NPC
+    const npc = npcs.value.find(n => n.floor === currentFloor.value && n.x === x && n.y === y)
+    if (npc) return npc
+    return null
+  })
 
-    // 2. 墙壁检查
-    const tileType = floor.matrix[nextY][nextX]
-    const tileInfo = zoneMeta[tileType]
-    if (!tileInfo || !tileInfo.passable) return // 撞墙
-
-    playerPos.value = { x: nextX, y: nextY }
-  }
+  // --- Actions ---
 
   function toggleMap() {
     isMapActive.value = !isMapActive.value
   }
 
+  function movePlayer(dx, dy) {
+    if (showInteractionMenu.value) return // 菜单打开时禁止移动
+
+    // 更新朝向
+    if (dx > 0) player.value.direction = 'right'
+    if (dx < 0) player.value.direction = 'left'
+    if (dy > 0) player.value.direction = 'down'
+    if (dy < 0) player.value.direction = 'up'
+
+    const newX = player.value.x + dx
+    const newY = player.value.y + dy
+
+    // 边界检查
+    if (newX < 0 || newX >= mapSize.w || newY < 0 || newY >= mapSize.h) return
+
+    // 碰撞检查 (简单的墙壁/NPC碰撞)
+    const isNpcHere = npcs.value.some(n => n.floor === currentFloor.value && n.x === newX && n.y === newY)
+    if (isNpcHere) return // 撞到人了
+
+    // 移动
+    player.value.x = newX
+    player.value.y = newY
+  }
+
+  function triggerInteraction() {
+    const target = interactTarget.value
+    if (target) {
+      currentTarget.value = target
+      showInteractionMenu.value = true
+    } else {
+      // 如果前面没人，可能是调查环境
+      gameStore.sendMessage(`(调查环境) ${currentZoneInfo.value.desc}`)
+    }
+  }
+
+  function closeInteraction() {
+    showInteractionMenu.value = false
+    currentTarget.value = null
+  }
+
+  // 执行具体交互指令
+  async function executeAction(actionType, subType = null) {
+    const target = currentTarget.value
+    if (!target) return
+
+    let text = ''
+    
+    if (target.type === 'girl') {
+      if (actionType === 'follow') {
+        text = `我对${target.name}说：跟我上楼。❤️`
+      } else if (actionType === 'train') {
+        text = `我对${target.name}进行调教（${subType}）。🥵`
+      } else {
+        text = `我和${target.name}进行了日常交谈。`
+      }
+    } else {
+      // 客人或员工
+      text = `我与${target.name}进行了互动。`
+    }
+
+    // 发送到主游戏 Log
+    await gameStore.sendMessage(text)
+    
+    closeInteraction()
+  }
+
   return {
-    currentFloor,
-    playerPos,
     isMapActive,
-    mapData,
-    zoneMeta,
+    currentFloor,
+    player,
     npcs,
-    currentZoneDesc,
-    currentInteractables,
-    move,
-    toggleMap
+    currentZoneInfo,
+    interactTarget,
+    showInteractionMenu,
+    currentTarget,
+    toggleMap,
+    movePlayer,
+    triggerInteraction,
+    closeInteraction,
+    executeAction
   }
 })

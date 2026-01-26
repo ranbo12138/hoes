@@ -1,35 +1,70 @@
-/* 定义全局 CSS 变量 - 异世界风格 */
 :root {
-  /* 主色调 - 奢华金与深邃紫 */
-  --color-primary: #ffd700;       /* 标题金 */
-  --color-primary-dark: #b8860b;
-  --color-secondary: #4a148c;     /* 贵族紫 */
-  --color-accent: #00e676;        /* 交互绿 (用于按钮/通过) */
-  --color-danger: #ff5252;
+  /* --- 调色板 Palette --- */
   
-  /* 背景色 */
-  --bg-dark: #1a0b2e;
-  --bg-panel: rgba(0, 0, 0, 0.6);
+  /* 金色系 */
+  --color-gold-light: #FFD700;
+  --color-gold: #D4AF37;
+  --color-gold-dark: #AA8C2C;
+  --color-gold-shadow: #3E2723;
+
+  /* 红色系 */
+  --color-red: #C0392B;
+  --color-red-light: #E74C3C;
+  --color-red-dark: #922B21;
+
+  /* 紫色系 */
+  --color-purple-deep: #1A0B2E;
+  --color-purple-dark: #2E1A47;
+  --color-purple-light: #4A148C;
+
+  /* 文本颜色 */
+  --text-main: #FDFEFE;
+  --text-gold: #F1C40F;
+  --text-dim: #B0BEC5;
+
+  /* --- 语义化变量 Semantic --- */
+  --color-primary: var(--color-gold);
+  --color-secondary: var(--color-purple-light);
+  --color-accent: var(--color-red);
   
-  /* 文本色 */
-  --text-main: #ffffff;
-  --text-muted: #b0bec5;
+  --bg-main: var(--color-purple-deep);
+  --bg-panel: rgba(20, 10, 30, 0.85);
+  --bg-panel-light:rgba(46, 26, 71, 0.8);
+
+  /* --- 尺寸变量 (移动端优先) --- */
+  --header-height: 48px;
   
-  /* 间距系统 */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 40px;
+  /* --- 边框与装饰 --- */
+  --border-width: 1px; /* 移动端减细边框 */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-gold: var(--border-width) solid var(--color-gold);
   
-  /* 字体 */
-  --font-title: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* --- 阴影 --- */
+  --shadow-text: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 8px rgba(212, 175, 55, 0.3);
+
+  /* --- 字体 --- */
+  --font-main: 'Cinzel', 'Times New Roman', serif; 
+  --font-ui: 'Segoe UI', Tahoma, sans-serif;
 }
 
 body {
   margin: 0;
-  background-color: var(--bg-dark);
+  background-color: var(--bg-main);
   color: var(--text-main);
-  font-family: var(--font-title);
-  overflow: hidden; /* 游戏通常不允许滚动 */
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px; /* 移动端基准字体稍微减小 */
+}
+
+/* 简单的响应式调整（可选） */
+@media (min-width: 768px) {
+  :root {
+    --border-width: 2px;
+  }
+  body {
+    font-size: 16px;
+  }
 }

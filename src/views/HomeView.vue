@@ -1,46 +1,56 @@
 <script setup>
-import { ref } from 'vue' // 引入 ref
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/Base/BaseButton.vue'
+import BasePanel from '@/components/Base/BasePanel.vue'
 import { useSystemStore } from '@/stores/system'
 import bgImg from '@/assets/bg_main.jpg'
-import logoImg from '@/assets/logo_original.jpg' // 改为引用 jpg 原图
-
+import logoImg from '@/assets/logo_original.jpg'
 import AutoTransparentImage from '@/components/Base/AutoTransparentImage.vue'
 
 const router = useRouter()
 const systemStore = useSystemStore()
-const hasLogo = ref(true) // 默认假设有 Logo
+const hasLogo = ref(true)
 
 function handleImageError() {
-  hasLogo.value = false // 图片加载失败时回退到文字
+  hasLogo.value = false
 }
 
-function handleStart() {
-  console.log('Starting new game...')
-  systemStore.startGame()
-  router.push('/game') 
+async function handleStart() {
+  console.log('--- Handle Start Clicked ---')
+  try {
+    systemStore.startGame()
+    console.log('Game Started in Store, navigating...')
+    await router.push({ name: 'game' })
+    console.log('Navigation successful')
+  } catch (e) {
+    console.error('Navigation failed:', e)
+    alert('无法进入游戏，请检查控制台错误信息。')
+  }
 }
 
 function handleLoad() {
-  console.log('Loading save...')
+  console.log('Load clicked')
   alert('打开存档界面')
 }
 
 function handleSettings() {
-  console.log('Opening settings...')
+  console.log('Settings clicked')
   alert('打开设置')
 }
+
+onMounted(() => {
+  console.log('HomeView Mounted')
+})
 </script>
 
 <template>
   <div class="home-view" :style="{ backgroundImage: `url(${bgImg})` }">
-    <!-- 遮罩层 -->
+    <!-- 遮罩层: 确保 pointer-events: none -->
     <div class="overlay"></div>
 
     <div class="content-wrapper">
       <div class="title-section">
-        <!-- 使用自动去黑底组件 -->
         <AutoTransparentImage 
           v-if="hasLogo" 
           :src="logoImg" 
@@ -48,19 +58,23 @@ function handleSettings() {
           class="game-logo-wrapper"
         />
 
-        <!-- 如果没图片（或加载失败），显示原来的 CSS 艺术字 -->
         <div v-else class="text-fallback">
           <h1 class="main-title" data-text="异世界娼馆">异世界娼馆</h1>
           <h2 class="sub-title">模拟器</h2>
         </div>
-        
       </div>
 
-      <nav class="menu-nav">
-        <BaseButton class="menu-item" @click="handleStart">开始经营</BaseButton>
-        <BaseButton class="menu-item" @click="handleLoad">读取记录</BaseButton>
-        <BaseButton class="menu-item" @click="handleSettings">系统设置</BaseButton>
-      </nav>
+      <!-- 菜单导航区域 -->
+      <BasePanel class="menu-nav-panel">
+        <nav class="menu-nav">
+          <!-- 增加一个原生按钮用于对比测试（隐藏，如果 BaseButton 不行可以临时打开） -->
+          <!-- <button @click="handleStart" style="z-index:999; padding: 20px;">原生测试按钮</button> -->
+
+          <BaseButton class="menu-item" @click="handleStart">开始经营</BaseButton>
+          <BaseButton class="menu-item" variant="secondary" @click="handleLoad">读取记录</BaseButton>
+          <BaseButton class="menu-item" variant="secondary" @click="handleSettings">系统设置</BaseButton>
+        </nav>
+      </BasePanel>
 
       <footer class="version-info">
         v{{ systemStore.version }} - Early Access
@@ -74,13 +88,10 @@ function handleSettings() {
   width: 100vw;
   height: 100vh;
   position: relative;
-  
-  /* 备用背景：优雅的深色酒馆风格 */
-  background: radial-gradient(circle at center, #2e1a47 0%, #1a0b2e 100%);
+  background-color: var(--color-purple-deep);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  
   overflow: hidden;
 }
 
@@ -90,35 +101,40 @@ function handleSettings() {
   left: 0;
   width: 100%;
   height: 100%;
-  /* 深色半透明遮罩，让白色/金色文字在热闹背景上也能看清 */
-  background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%);
+  background: radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%);
   z-index: 1;
+  pointer-events: none; /* 关键：确保不阻挡点击 */
 }
 
 .content-wrapper {
   position: relative;
-  z-index: 2; /* 确保内容在遮罩之上 */
+  z-index: 10; /* 提高层级 */
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding-bottom: 20px; 
 }
 
 .title-section {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 40px; 
   animation: float 4s ease-in-out infinite;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  pointer-events: none; /* 标题不应阻挡交互 */
 }
+/* 标题内部的图片需要恢复 pointer-events 吗？暂时不需要 */
 
 .game-logo-wrapper {
-  max-width: 800px;
-  width: 90%;
-  margin-bottom: 10px;
+  max-width: 600px;
+  width: 80%;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
 }
 
 .text-fallback {
@@ -128,75 +144,62 @@ function handleSettings() {
 }
 
 .main-title {
-  font-size: 6rem;
+  font-family: var(--font-main);
+  font-size: clamp(2.5rem, 10vw, 6rem);
   margin: 0;
-  color: var(--color-primary);
   text-transform: uppercase;
-  letter-spacing: 0.5rem;
+  letter-spacing: 0.2rem;
+  line-height: 1.2;
+  text-align: center;
   
-  /* 黄金质感 */
-  background: linear-gradient(to bottom, #fffebb 0%, #ffd700 50%, #b8860b 100%);
+  background: linear-gradient(to bottom, #FFF8E1 0%, var(--color-gold) 50%, var(--color-gold-shadow) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   
-  /* 强烈的文字阴影，保证在任何背景下都清晰可见 */
-  filter: drop-shadow(0 4px 0 #3e2723) drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+  filter: drop-shadow(0 2px 0 var(--color-gold-shadow)) drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
 }
 
 .sub-title {
-  font-size: 3rem;
-  margin: 0;
-  color: #fff;
-  letter-spacing: 1rem;
-  opacity: 1;
+  font-family: var(--font-main);
+  font-size: clamp(1.2rem, 5vw, 3rem);
+  margin-top: 8px;
+  color: var(--text-main);
+  letter-spacing: 0.5rem;
   text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
-.eng-title {
-  margin-top: 10px;
-  font-size: 1rem;
-  color: var(--color-accent);
-  letter-spacing: 0.3rem;
-  text-transform: uppercase;
-  opacity: 0.9;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-  background: rgba(0,0,0,0.6);
-  display: inline-block;
-  padding: 4px 16px;
-  border-radius: 4px;
+.menu-nav-panel {
+  min-width: 260px;
+  width: 80%;
+  max-width: 400px;
+  padding: 30px 20px;
+  background: rgba(20, 10, 30, 0.6);
+  pointer-events: auto; /* 确保面板可点击 */
 }
 
 .menu-nav {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 40px;
-  /* 调整为更深色的半透明底板，适配暖色背景 */
-  background: rgba(20, 10, 5, 0.6);
-  border-radius: 16px;
-  border: 1px solid rgba(255,215,0, 0.2);
-  backdrop-filter: blur(4px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  gap: 16px;
+  align-items: center;
 }
 
-.menu-item :deep(button) {
-  width: 200px;
-  height: 55px;
-  font-size: 1.2rem;
+.menu-item {
+  width: 100%;
 }
 
 .version-info {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  bottom: 10px;
+  right: 10px; 
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,1);
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 </style>
