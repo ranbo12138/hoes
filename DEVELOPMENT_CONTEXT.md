@@ -15,6 +15,7 @@
 - **禁止**: 引入 ElementUI, AntDesign 等重型组件库。
 - **强制**: 使用纯 CSS + `<base-panel>` / `<base-button>` 组件。
 - **图标**: 必须使用 `@phosphor-icons/vue`。
+- **富文本**: 使用 `markdown-it` 渲染剧情文本。
 - **风格**: 暗黑/金色/魔法风格 (`var(--color-gold)`, `var(--color-purple-deep)`).
 
 ### 1.3 AI 架构 (AI Architecture)

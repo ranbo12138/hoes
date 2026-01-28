@@ -14,7 +14,7 @@ export const useGameStore = defineStore('game', () => {
     { 
       id: 1, 
       type: 'system', 
-      text: '欢迎来到异世界娼馆。作为新任店主，你接手了这家破旧的店铺...', 
+      text: '欢迎来到 **异世界娼馆**。作为新任店主，你接手了这家 *破旧* 的店铺...', 
       timestamp: new Date().toLocaleTimeString() 
     },
     { 

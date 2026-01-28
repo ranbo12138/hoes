@@ -1,6 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BaseButton from '@/components/Base/BaseButton.vue'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({
+  breaks: true, // 转换 \n 为 <br>
+  linkify: true // 自动识别 URL
+})
 
 const props = defineProps({
   log: {
@@ -14,6 +20,12 @@ const emit = defineEmits(['update', 'delete', 'regenerate'])
 const isEditing = ref(false)
 const editText = ref('')
 const isToolbarVisible = ref(false) // 控制工具栏显示
+
+// 渲染 Markdown
+const renderedContent = computed(() => {
+  if (!props.log.text) return ''
+  return md.render(props.log.text)
+})
 
 function startEdit() {
   editText.value = props.log.text
@@ -63,9 +75,7 @@ function toggleToolbar() {
     <div v-if="log.type !== 'system'" class="log-name">{{ log.name }}</div>
 
     <!-- 内容 (普通模式) -->
-    <div v-if="!isEditing" class="log-content-box">
-      {{ log.text }}
-    </div>
+    <div v-if="!isEditing" class="log-content-box markdown-content" v-html="renderedContent"></div>
 
     <!-- 内容 (编辑模式) -->
     <div v-else class="edit-mode" @click.stop>
@@ -110,9 +120,54 @@ function toggleToolbar() {
   border-radius: 12px;
   border-top-left-radius: 2px; /* 气泡感 */
   color: var(--text-main);
-  line-height: 1.5;
+  line-height: 1.6;
   font-size: 0.95rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* --- Markdown Styles --- */
+.markdown-content :deep(p) {
+  margin-bottom: 0.8em;
+}
+.markdown-content :deep(p):last-child {
+  margin-bottom: 0;
+}
+.markdown-content :deep(strong) {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+.markdown-content :deep(em) {
+  font-style: italic;
+  color: #E0C0FF; /* 浅紫色 */
+}
+.markdown-content :deep(ul), .markdown-content :deep(ol) {
+  margin-left: 1.2em;
+  margin-bottom: 0.8em;
+}
+.markdown-content :deep(li) {
+  margin-bottom: 0.4em;
+}
+.markdown-content :deep(h1), .markdown-content :deep(h2), .markdown-content :deep(h3) {
+  color: var(--color-gold);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-size: 1.1em;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding-bottom: 4px;
+}
+.markdown-content :deep(blockquote) {
+  border-left: 3px solid var(--color-gold-dark);
+  padding-left: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 0.5em 0;
+}
+.markdown-content :deep(code) {
+  background: rgba(0,0,0,0.3);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
 }
 
 /* 玩家气泡 */

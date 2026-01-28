@@ -17,6 +17,7 @@
 #### 2. UI/UX 全面升级
 - **纯 CSS 组件化**：移除旧版图片素材依赖，全面采用 CSS3 实现“暗黑/奢华/魔法”风格的 UI（`BaseButton`, `BasePanel`）。
 - **图标系统**：集成 `@phosphor-icons/vue`，统一全站视觉语言。
+- **富文本支持**：引入 `markdown-it` 实现剧情文本的 Markdown 渲染，支持加粗、斜体、列表等富文本样式，提升阅读体验。
 - **移动端适配**：优化了 `TopBar` 和 `GameInputBar` 的布局，确保在移动端的高质感体验。
 
 #### 3. 员工管理系统 (Employee System)
@@ -31,7 +32,7 @@
 ### 技术栈
 - **Frontend**: Vue 3 (Composition API) + Vite
 - **State Management**: Pinia (支持 TypeScript)
-- **UI Framework**: Custom CSS / Phosphor Icons
+- **UI Framework**: Custom CSS / Phosphor Icons / Markdown-it
 - **AI Layer**: Fetch API + Custom Protocol Middleware
 - **Language**: JavaScript (Legacy) / TypeScript (New Modules)
 
