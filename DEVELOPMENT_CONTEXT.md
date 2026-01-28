@@ -17,62 +17,54 @@
 - **图标**: 必须使用 `@phosphor-icons/vue`。
 - **风格**: 暗黑/金色/魔法风格 (`var(--color-gold)`, `var(--color-purple-deep)`).
 
----
-
-## 2. 下一步核心任务：AI 指令协议 (AI Command Protocol)
-
-**目标**: 实现在前端截获 AI 的剧情回复，并自动更新游戏状态。
-
-### 2.1 协议标准 (The Protocol)
-我们需要 System Prompt 引导 AI 在回复末尾输出被 ` ```json ` 包裹的指令块。
-
-**JSON 结构定义**:
-```typescript
-type ActionType = 'UPDATE_GIRL' | 'ADD_GOLD' | 'SYSTEM_NOTICE' | 'MOVE_PLAYER';
-
-interface AIAction {
-  type: ActionType;
-  // UPDATE_GIRL 载荷
-  id?: string; 
-  data?: {
-    sanity?: number; // 增量，如 -5
-    energy?: number; // 增量，如 -10
-    attire?: string; // 替换文本
-    location?: string;
-  };
-  // ADD_GOLD 载荷
-  amount?: number;
-  // SYSTEM_NOTICE 载荷
-  text?: string;
-}
-```
-
-### 2.2 实现逻辑 (Implementation Logic)
-该功能应在 `src/stores/game.js` 的 `sendMessage` 方法中实现。
-
-1.  **System Prompt**: 修改 AI 调用的提示词，强制要求 JSON 格式。
-2.  **Middleware (解析器)**:
-    - 接收 AI 原始文本。
-    - 正则提取 ` ```json [...] ``` `。
-    - `JSON.parse` 解析指令数组。
-    - 剔除 JSON 部分，仅保留纯文本剧情用于 UI 显示。
-3.  **Executor (执行器)**:
-    - 遍历指令数组。
-    - 调用 `useGirlsStore().updateGirlStatus(...)` 或修改 `gameStore` 状态。
+### 1.3 AI 架构 (AI Architecture)
+- **接口层**: `src/api/llm.js` 封装了 OpenAI/Gemini 的调用细节。
+- **协议层**: AI 输出包含 ` ```json ` 指令块，由 `src/stores/game.js` 中的 `processAIResponse` 解析。
+- **配置层**: `src/stores/settings.js` 管理 API Key 和 Endpoint，支持本地持久化。
 
 ---
 
-## 3. 数据模型重点 (Data Model Focus)
+## 2. 下一步核心任务：基础功能补全 (Basic Systems)
 
-参考 `src/stores/girls.ts`。我们非常看重以下数值的玩法影响：
-- **Sanity (理智)**: 低于 20 应触发崩溃事件。
-- **Depravity (堕落)**: 决定可以解锁的高级交互（未来开发）。
-- **Skills**: S/A/B/C/D 评级系统。
+**目标**: 完善游戏的循环体验，确保“招募-经营-存档”流程闭环。
+
+### 2.1 存档系统修复 (Save System Fix)
+目前 `save.js` 只保存了 `gameStore`，**丢失了 `girlsStore` 和 `settingsStore`**。
+- **任务**: 
+  - 重构 `save.js`，使其支持多 Store 的打包保存/读取。
+  - 在加载存档时，正确初始化 `girls.ts` 中的动态列表。
+
+### 2.2 招募系统 (Recruitment)
+需要一个工厂函数来生成随机 NPC。
+- **Location**: `src/utils/girlFactory.ts` (需新建)
+- **Logic**: 
+  - 随机种族 (Race): Human, Elf, Catgirl, Succubus...
+  - 随机稀有度 (Rarity): N(50%), R(30%), SR(15%), SSR(5%).
+  - 随机特质 (Traits): 基于稀有度决定特质数量。
+  - 随机属性: 生成初始三围、理智上限等。
+
+---
+
+## 3. 已完成的核心模块 (Completed Modules)
+
+### 3.1 AI 指令协议 (AI Command Protocol)
+- **实现**: `src/stores/game.js` -> `processAIResponse`
+- **支持指令**:
+  - `UPDATE_GIRL`: 更新 Sanity, Energy, Attire 等。
+  - `ADD_GOLD`: 增减金币。
+  - `SYSTEM_NOTICE`: 系统提示。
+
+### 3.2 数据模型 (Data Model)
+- **Files**: `src/stores/girls.ts`
+- **Features**: 
+  - 完整的 TS 类型定义 (`Girl`, `GirlDynamicData`).
+  - 包含理智 (Sanity) 和 堕落度 (Depravity) 核心数值。
 
 ---
 
 ## 4. 待办事项清单 (Detailed Todo)
 
-1.  **GameStore 改造**: 引入 `processAIResponse` 函数 (参考历史对话中的设计)。
-2.  **招募系统**: 基于 `girls.ts` 的结构，创建一个生成随机 NPC 的工厂函数。
-3.  **持久化**: 目前的 `save.js` 尚未保存 `girlsStore` 的数据，需修复。
+1.  **修复存档**: 修改 `save.js`，整合 `girlsStore` 数据。
+2.  **工厂函数**: 创建 `src/utils/girlFactory.ts`。
+3.  **UI 接入**: 在主界面或游戏内添加“招募”入口，调用工厂函数并扣除金币。
+4.  **记忆系统**: 开启 `llm.js` 中的工具调用功能，实现 `save_memory` / `recall_memory`。

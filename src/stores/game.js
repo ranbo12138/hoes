@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useGirlsStore } from './girls'
+import { callLLM } from '@/api/llm'
 
 export const useGameStore = defineStore('game', () => {
   // 资源状态
@@ -33,6 +35,64 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
+  // AI 指令处理中间件
+  function processAIResponse(fullText) {
+    // 1. 尝试提取 JSON 块
+    const jsonRegex = /```json\s*([\s\S]*?)\s*```/;
+    const match = fullText.match(jsonRegex);
+    
+    let displayText = fullText;
+    
+    if (match) {
+      try {
+        const jsonStr = match[1];
+        const commands = JSON.parse(jsonStr);
+        const girlsStore = useGirlsStore();
+        
+        console.log('[AI Protocol] Executing commands:', commands);
+
+        // 2. 移除 JSON 得到纯剧情文本
+        displayText = fullText.replace(match[0], '').trim();
+
+        // 3. 执行指令
+        if (Array.isArray(commands)) {
+          commands.forEach(cmd => {
+            switch (cmd.type) {
+              case 'UPDATE_GIRL':
+                // { type: 'UPDATE_GIRL', id: 'g001', data: { sanity: -5 } }
+                if (cmd.id && cmd.data) {
+                  girlsStore.updateGirlStatus(cmd.id, cmd.data);
+                }
+                break;
+              
+              case 'ADD_GOLD':
+                // { type: 'ADD_GOLD', amount: 100 }
+                if (typeof cmd.amount === 'number') {
+                  gold.value += cmd.amount;
+                }
+                break;
+
+              case 'SYSTEM_NOTICE':
+                // { type: 'SYSTEM_NOTICE', text: '...' }
+                if (cmd.text) {
+                  addLog({ type: 'system', text: cmd.text });
+                }
+                break;
+
+              default:
+                console.warn('[AI Protocol] Unknown command type:', cmd.type);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('[AI Protocol] Failed to parse AI commands:', e);
+        // 如果解析失败，保留原文，避免剧情丢失
+      }
+    }
+    
+    return displayText;
+  }
+
   // 核心交互逻辑：发送消息
   async function sendMessage(text) {
     if (!text || !text.trim()) return
@@ -44,18 +104,48 @@ export const useGameStore = defineStore('game', () => {
       name: '店主'
     })
 
-    // 2. 模拟系统/AI 回复
-    // 未来这里可以替换为真实的 API 调用
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        addLog({
-          type: 'npc',
-          name: '系统',
-          text: `你刚才说了: "${text}"。 (AI 接口暂未连接)`
-        })
-        resolve()
-      }, 800)
+    // 2. 准备上下文数据
+    const girlsStore = useGirlsStore()
+    const context = {
+      gold: gold.value,
+      day: day.value,
+      girls: girlsStore.girls
+    }
+
+    // 3. 调用 LLM
+    // 添加一个临时的 loading log
+    const loadingLogId = Date.now() + 1
+    addLog({
+      id: loadingLogId,
+      type: 'system',
+      text: 'AI 正在思考剧情...'
     })
+
+    try {
+      const aiResponse = await callLLM(text, context)
+      
+      // 移除 loading log
+      deleteLog(loadingLogId)
+
+      // 处理回复
+      const cleanText = processAIResponse(aiResponse)
+      
+      addLog({
+        type: 'npc',
+        name: '系统', // 或者根据回复内容动态判断角色
+        text: cleanText
+      })
+
+    } catch (error) {
+      // 移除 loading log
+      deleteLog(loadingLogId)
+      
+      console.error('AI Call Failed:', error)
+      addLog({
+        type: 'system',
+        text: `(系统错误: ${error.message}。请在首页“系统设置”中检查 API 配置)`
+      })
+    }
   }
 
   function updateLog(id, newText) {
@@ -71,12 +161,8 @@ export const useGameStore = defineStore('game', () => {
 
   // 重新生成逻辑
   async function regenerateLog(id) {
-    // 找到这条日志，如果是 NPC 回复，则删除它，并重新提交上一条玩家指令
     const index = logs.value.findIndex(l => l.id === id)
     if (index !== -1) {
-       // 如果是删除当前条，并重试
-       // 实际业务中可能需要找到"上一条玩家输入"来重发
-       // 这里简单模拟：删除当前条，提示用户
        logs.value.splice(index, 1)
        // TODO: 触发 AI 重新生成
        return true

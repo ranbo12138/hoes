@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/Base/BaseButton.vue'
 import BasePanel from '@/components/Base/BasePanel.vue'
+import SettingsModal from '@/components/SettingsModal.vue'
 import { useSystemStore } from '@/stores/system'
 import bgImg from '@/assets/bg_main.jpg'
 import logoImg from '@/assets/logo_original.jpg'
@@ -11,6 +12,8 @@ import AutoTransparentImage from '@/components/Base/AutoTransparentImage.vue'
 const router = useRouter()
 const systemStore = useSystemStore()
 const hasLogo = ref(true)
+const showSettings = ref(false)
+const settingsMode = ref('general') // 'general' | 'ai'
 
 function handleImageError() {
   hasLogo.value = false
@@ -36,7 +39,14 @@ function handleLoad() {
 
 function handleSettings() {
   console.log('Settings clicked')
-  alert('打开设置')
+  settingsMode.value = 'general'
+  showSettings.value = true
+}
+
+function handleAISettings() {
+  console.log('AI Settings clicked')
+  settingsMode.value = 'ai'
+  showSettings.value = true
 }
 
 onMounted(() => {
@@ -73,6 +83,7 @@ onMounted(() => {
           <BaseButton class="menu-item" @click="handleStart">开始经营</BaseButton>
           <BaseButton class="menu-item" variant="secondary" @click="handleLoad">读取记录</BaseButton>
           <BaseButton class="menu-item" variant="secondary" @click="handleSettings">系统设置</BaseButton>
+          <BaseButton class="menu-item" variant="secondary" @click="handleAISettings">AI 连接</BaseButton>
         </nav>
       </BasePanel>
 
@@ -80,6 +91,14 @@ onMounted(() => {
         v{{ systemStore.version }} - Early Access
       </footer>
     </div>
+
+    <Transition name="fade">
+      <SettingsModal 
+        v-if="showSettings" 
+        :panel-type="settingsMode"
+        @close="showSettings = false" 
+      />
+    </Transition>
   </div>
 </template>
 

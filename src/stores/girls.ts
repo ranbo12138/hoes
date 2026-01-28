@@ -51,6 +51,17 @@ export interface Girl {
   dynamic: GirlDynamicData;
 }
 
+// 更新指令接口
+export interface GirlStatusUpdate {
+  sanity?: number;    // 增量
+  energy?: number;    // 增量
+  obedience?: number; // 增量
+  depravity?: number; // 增量
+  attire?: string;    // 替换
+  location?: string;  // 替换
+  currentActivity?: string; // 替换
+}
+
 // --- Store 实现 ---
 
 export const useGirlsStore = defineStore('girls', () => {
@@ -92,7 +103,7 @@ export const useGirlsStore = defineStore('girls', () => {
         traits: ['精力旺盛', '杂技'],
         measurements: '32B-22-32',
         description: '贫民窟长大的流浪猫娘，为了吃饱饭自愿加入。非常听话，但经常笨手笨脚。'
-      },
+ },
       dynamic: {
         energy: { current: 40, max: 120 },
         sanity: { current: 95, max: 100, status: '正常' },
@@ -121,10 +132,51 @@ export const useGirlsStore = defineStore('girls', () => {
     girls.value.push(newGirl)
   }
 
+  function updateGirlStatus(id: string, updates: GirlStatusUpdate) {
+    const girl = girls.value.find(g => g.id === id)
+    if (!girl) {
+      console.warn(`[GirlsStore] Girl not found: ${id}`)
+      return
+    }
+
+    // 更新理智 (Sanity) - 包含状态检查
+    if (updates.sanity !== undefined) {
+      girl.dynamic.sanity.current = Math.min(girl.dynamic.sanity.max, Math.max(0, girl.dynamic.sanity.current + updates.sanity))
+      
+      // 简单的状态阈值检查
+      const s = girl.dynamic.sanity.current
+      if (s <= 0) girl.dynamic.sanity.status = '疯狂'
+      else if (s < 20) girl.dynamic.sanity.status = '崩溃'
+      else if (s < 50) girl.dynamic.sanity.status = '恍惚'
+      else girl.dynamic.sanity.status = '正常'
+    }
+
+    // 更新精力 (Energy)
+    if (updates.energy !== undefined) {
+      girl.dynamic.energy.current = Math.min(girl.dynamic.energy.max, Math.max(0, girl.dynamic.energy.current + updates.energy))
+    }
+
+    // 更新服从度 (Obedience)
+    if (updates.obedience !== undefined) {
+      girl.dynamic.obedience = Math.min(100, Math.max(0, girl.dynamic.obedience + updates.obedience))
+    }
+
+    // 更新堕落度 (Depravity)
+    if (updates.depravity !== undefined) {
+      girl.dynamic.depravity = Math.min(100, Math.max(0, girl.dynamic.depravity + updates.depravity))
+    }
+
+    // 字符串/状态类更新
+    if (updates.attire) girl.dynamic.attire = updates.attire
+    if (updates.location) girl.dynamic.location = updates.location
+    if (updates.currentActivity) girl.dynamic.currentActivity = updates.currentActivity
+  }
+
   return {
     girls,
     getGirlById,
     totalDailyIncome,
-    addGirl
+    addGirl,
+    updateGirlStatus
   }
 })
