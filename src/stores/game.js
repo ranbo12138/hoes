@@ -174,6 +174,13 @@ export const useGameStore = defineStore('game', () => {
     logs.value = []
   }
 
+  function loadState(state) {
+    if (state.gold !== undefined) gold.value = state.gold
+    if (state.day !== undefined) day.value = state.day
+    if (state.energy !== undefined) energy.value = state.energy
+    if (state.logs !== undefined) logs.value = state.logs
+  }
+
   return {
    gold,
     day,
@@ -184,6 +191,7 @@ export const useGameStore = defineStore('game', () => {
     updateLog,
     deleteLog,
     regenerateLog,
-    clearLogs
+    clearLogs,
+    loadState
   }
 })

@@ -9,63 +9,61 @@
 - **规则**: 
   - 新增的 Store 和复杂逻辑层必须使用 **TypeScript**。
   - 现有的 `.vue` 组件暂时保持现状，按需重构。
-  - `src/stores/girls.ts` 是目前的数据模型标准。
+  - `src/stores/girls.ts` 和 `src/stores/schedule.ts` 是目前的 TS 标准范例。
 
 ### 1.2 UI 设计系统
 - **禁止**: 引入 ElementUI, AntDesign 等重型组件库。
-- **强制**: 使用纯 CSS + `<base-panel>` / `<base-button>` 组件。
+- **强制**: 使用纯 CSS + 自定义组件 (`BaseButton.vue`, `BasePanel.vue`)。
 - **图标**: 必须使用 `@phosphor-icons/vue`。
-- **富文本**: 使用 `markdown-it` 渲染剧情文本。
-- **风格**: 暗黑/金色/魔法风格 (`var(--color-gold)`, `var(--color-purple-deep)`).
+- **风格**: 诱惑/氛围/18+/魔法风格 (Seductive/Atmospheric/Magic).
+  - 关键词: `Glow`, `Glassmorphism`, `Gold`, `Dark Purple`.
+- **优先级**: 移动端体验优先 (Mobile First)。
 
-### 1.3 AI 架构 (AI Architecture)
-- **接口层**: `src/api/llm.js` 封装了 OpenAI/Gemini 的调用细节。
-- **协议层**: AI 输出包含 ` ```json ` 指令块，由 `src/stores/game.js` 中的 `processAIResponse` 解析。
-- **配置层**: `src/stores/settings.js` 管理 API Key 和 Endpoint，支持本地持久化。
+### 1.4 模块化与工程标准
+- **组件解耦**: UI 组件应剥离具体业务逻辑，通过 Props/Events 通信。
+- **逻辑复用**: 复杂的状态逻辑应封装为 Composables 或 Store Actions。
 
 ---
 
-## 2. 下一步核心任务：基础功能补全 (Basic Systems)
+## 2. 下一步核心任务：AI 灵魂注入 (Soul Injection)
 
-**目标**: 完善游戏的循环体验，确保“招募-经营-存档”流程闭环。
+**目标**: 让游戏摆脱单纯的数值循环，通过 AI 记忆让每个 NPC 变得鲜活。
 
-### 2.1 存档系统修复 (Save System Fix)
-目前 `save.js` 只保存了 `gameStore`，**丢失了 `girlsStore` 和 `settingsStore`**。
-- **任务**: 
-  - 重构 `save.js`，使其支持多 Store 的打包保存/读取。
-  - 在加载存档时，正确初始化 `girls.ts` 中的动态列表。
+### 2.1 AI 记忆系统 (Memory System)
+- **Location**: `src/stores/memory.ts` (需新建)
+- **Concept**:
+  - **Short-term**: 当前对话 Context（已实现）。
+  - **Long-term**: 关键事件记录（如“第一次接客”、“堕落度突破50”）。
+- **Implementation**:
+  - 在 `src/api/llm.js` 中启用 `tools` (Function Calling)。
+  - 定义 `save_memory(key, value)` 和 `recall_memory(key)` 工具。
 
-### 2.2 招募系统 (Recruitment)
-需要一个工厂函数来生成随机 NPC。
-- **Location**: `src/utils/girlFactory.ts` (需新建)
-- **Logic**: 
-  - 随机种族 (Race): Human, Elf, Catgirl, Succubus...
-  - 随机稀有度 (Rarity): N(50%), R(30%), SR(15%), SSR(5%).
-  - 随机特质 (Traits): 基于稀有度决定特质数量。
-  - 随机属性: 生成初始三围、理智上限等。
+### 2.2 事件多样性 (Event Variety)
+- 目前日程只有 3 种基础任务。
+- **计划**:
+  - 新增 `TaskType`: `special_service`, `outdoor_event`.
+  - 在 `schedule.ts` 中引入随机性（成功/失败判定）。
 
 ---
 
 ## 3. 已完成的核心模块 (Completed Modules)
 
-### 3.1 AI 指令协议 (AI Command Protocol)
-- **实现**: `src/stores/game.js` -> `processAIResponse`
-- **支持指令**:
-  - `UPDATE_GIRL`: 更新 Sanity, Energy, Attire 等。
-  - `ADD_GOLD`: 增减金币。
-  - `SYSTEM_NOTICE`: 系统提示。
+### 3.1 核心循环 (Core Loop)
+- **存档**: `src/api/save.js` 支持多 Store 打包。
+- **招募**: `RecruitPanel` + `girlFactory` (SSR/SR/R/N 体系)。
+- **日程**: `SchedulePanel` + `schedule.ts` (每日任务分配与结算)。
 
-### 3.2 数据模型 (Data Model)
-- **Files**: `src/stores/girls.ts`
-- **Features**: 
-  - 完整的 TS 类型定义 (`Girl`, `GirlDynamicData`).
-  - 包含理智 (Sanity) 和 堕落度 (Depravity) 核心数值。
+### 3.2 UI/UX 2.0
+- **风格**: 确立了以 `variables.css` 为核心的魔法光效风格。
+- **组件**: `BaseButton` (流光), `BasePanel` (毛玻璃), `RecruitPanel` (塔罗牌)。
+
+### 3.3 工程化
+- **TypeScript**: `tsconfig.json` 已配置 `bundler` 模式并开启 `noEmit`，解决了与 Vite 的兼容性问题。
 
 ---
 
 ## 4. 待办事项清单 (Detailed Todo)
 
-1.  **修复存档**: 修改 `save.js`，整合 `girlsStore` 数据。
-2.  **工厂函数**: 创建 `src/utils/girlFactory.ts`。
-3.  **UI 接入**: 在主界面或游戏内添加“招募”入口，调用工厂函数并扣除金币。
-4.  **记忆系统**: 开启 `llm.js` 中的工具调用功能，实现 `save_memory` / `recall_memory`。
+1.  **Memory Store**: 创建 `src/stores/memory.ts`，定义记忆数据结构。
+2.  **LLM Tools**: 改造 `src/api/llm.js`，支持工具调用。
+3.  **Prompt Engineering**: 优化 System Prompt，使其能主动查询记忆。

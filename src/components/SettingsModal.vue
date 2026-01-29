@@ -67,11 +67,7 @@ function toggleTools() {
         
         <!-- 通用设置 -->
         <div v-if="panelType === 'general'" class="settings-group">
-          <div class="form-item">
-            <label>主音量</label>
-            <input type="range" v-model="settings.volume" min="0" max="100" />
-            <span>{{ settings.volume }}%</span>
-          </div>
+           <p class="tip">暂无通用设置项。</p>
         </div>
 
         <!-- AI 设置 -->
@@ -178,13 +174,15 @@ function toggleTools() {
 
 .close-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
+  z-index: 100; /* 确保在最上层 */
   background: none;
   border: none;
   color: var(--color-gold);
   cursor: pointer;
   transition: transform 0.2s;
+  padding: 4px; /* 增加点击区域 */
 }
 .close-btn:hover {
   transform: scale(1.1);

@@ -9,8 +9,10 @@ import GameLogList from '@/components/Game/GameLogList.vue'
 import GameInputBar from '@/components/Game/GameInputBar.vue'
 import GameMap from '@/components/MapSystem/GameMap.vue'
 import GirlsPanel from '@/components/Game/Panel/GirlsPanel.vue'
+import RecruitPanel from '@/components/Game/Panel/RecruitPanel.vue'
+import SchedulePanel from '@/components/Game/Panel/SchedulePanel.vue'
+import saveApi from '@/api/save'
 import bgImg from '@/assets/bg_main.jpg'
-
 
 // 引入图标
 import { 
@@ -18,7 +20,11 @@ import {
   PhCalendarBlank, 
   PhMapTrifold, 
   PhArrowUUpLeft, 
-  PhHeart // 替换 PhLips
+  PhHeart,
+  PhUserPlus,
+  PhFloppyDisk,
+  PhArrowCounterClockwise,
+  PhClipboardText
 } from '@phosphor-icons/vue'
 
 const router = useRouter()
@@ -26,6 +32,8 @@ const gameStore = useGameStore()
 const mapStore = useMapStore()
 
 const showGirlsPanel = ref(false)
+const showRecruitPanel = ref(false)
+const showSchedulePanel = ref(false)
 
 async function handleSend(text) {
 
@@ -36,8 +44,42 @@ function handleGirlsPanel() {
   showGirlsPanel.value = true
 }
 
+function handleRecruitPanel() {
+  showRecruitPanel.value = true
+}
+
 function closeGirlsPanel() {
   showGirlsPanel.value = false
+}
+
+function closeRecruitPanel() {
+  showRecruitPanel.value = false
+}
+
+function handleSchedulePanel() {
+  showSchedulePanel.value = true
+}
+
+function closeSchedulePanel() {
+  showSchedulePanel.value = false
+}
+
+async function handleSave() {
+  const result = await saveApi.saveGame()
+  if (result.success) {
+    gameStore.addLog({ type: 'system', text: '游戏已保存。' })
+  } else {
+    gameStore.addLog({ type: 'system', text: '保存失败！' })
+  }
+}
+
+async function handleLoad() {
+  const result = await saveApi.loadGame()
+  if (result.success) {
+    gameStore.addLog({ type: 'system', text: '游戏已读取。' })
+  } else {
+    gameStore.addLog({ type: 'system', text: '读取失败或没有存档。' })
+  }
 }
 
 function handleGoBack() {
@@ -81,6 +123,25 @@ function toggleMapMode() {
 
         <div class="divider-v"></div>
 
+        <button class="top-icon-btn" @click="handleRecruitPanel" title="人才市场">
+           <PhUserPlus weight="bold" class="action-icon" />
+        </button>
+
+        <button class="top-icon-btn" @click="handleSchedulePanel" title="日程安排">
+           <PhClipboardText weight="bold" class="action-icon" />
+        </button>
+
+        <div class="divider-v"></div>
+
+        <button class="top-icon-btn" @click="handleSave" title="保存">
+           <PhFloppyDisk weight="bold" class="action-icon" />
+        </button>
+        <button class="top-icon-btn" @click="handleLoad" title="读取">
+           <PhArrowCounterClockwise weight="bold" class="action-icon" />
+        </button>
+
+        <div class="divider-v"></div>
+
         <button class="top-icon-btn" @click="handleGirlsPanel" title="妓女状态">
            <PhHeart weight="fill" class="action-icon pink" /> <!-- 替换为 PhHeart -->
         </button>
@@ -95,8 +156,16 @@ function toggleMapMode() {
 
     <GameInputBar v-show="!mapStore.isMapActive" @send="handleSend" />
 
-    <Transition name="fade">
+    <Transition name="panel-fade">
       <GirlsPanel v-if="showGirlsPanel" @close="closeGirlsPanel" />
+    </Transition>
+
+    <Transition name="panel-fade">
+      <RecruitPanel v-if="showRecruitPanel" @close="closeRecruitPanel" />
+    </Transition>
+
+    <Transition name="panel-fade">
+      <SchedulePanel v-if="showSchedulePanel" @close="closeSchedulePanel" />
     </Transition>
   </div>
 </template>
@@ -173,13 +242,14 @@ function toggleMapMode() {
   color: #FF69B4;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.panel-fade-enter-active,
+.panel-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-out-back);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.panel-fade-enter-from,
+.panel-fade-leave-to {
   opacity: 0;
+  transform: scale(0.95);
 }
 </style>

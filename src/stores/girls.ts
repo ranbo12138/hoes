@@ -127,7 +127,11 @@ export const useGirlsStore = defineStore('girls', () => {
   
   const totalDailyIncome = computed(() => girls.value.reduce((sum, g) => sum + g.dynamic.dailyIncome, 0))
 
-  // Actions
+    // Actions
+  function loadState(savedGirls: Girl[]) {
+    girls.value = savedGirls
+  }
+
   function addGirl(newGirl: Girl) {
     girls.value.push(newGirl)
   }
@@ -176,6 +180,7 @@ export const useGirlsStore = defineStore('girls', () => {
     girls,
     getGirlById,
     totalDailyIncome,
+    loadState,
     addGirl,
     updateGirlStatus
   }

@@ -5,6 +5,7 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import BasePanel from '@/components/Base/BasePanel.vue'
 import SettingsModal from '@/components/SettingsModal.vue'
 import { useSystemStore } from '@/stores/system'
+import saveApi from '@/api/save'
 import bgImg from '@/assets/bg_main.jpg'
 import logoImg from '@/assets/logo_original.jpg'
 import AutoTransparentImage from '@/components/Base/AutoTransparentImage.vue'
@@ -32,9 +33,21 @@ async function handleStart() {
   }
 }
 
-function handleLoad() {
+async function handleLoad() {
   console.log('Load clicked')
-  alert('打开存档界面')
+  try {
+    const result = await saveApi.loadGame('auto')
+    if (result.success) {
+      systemStore.startGame() // 标记游戏状态为运行中
+      console.log('Load success, navigating...')
+      await router.push({ name: 'game' })
+    } else {
+      alert('未找到存档记录。请先开始游戏并保存。')
+    }
+  } catch (e) {
+    console.error('Load failed:', e)
+    alert('读取存档失败，请查看控制台错误。')
+  }
 }
 
 function handleSettings() {
@@ -189,18 +202,18 @@ onMounted(() => {
 }
 
 .menu-nav-panel {
-  min-width: 260px;
-  width: 80%;
-  max-width: 400px;
-  padding: 30px 20px;
+  min-width: 300px; /* 稍微加宽面板 */
+  width: 90%;
+  max-width: 420px;
+  padding: 40px 30px;
   background: rgba(20, 10, 30, 0.6);
-  pointer-events: auto; /* 确保面板可点击 */
+  pointer-events: auto; 
 }
 
 .menu-nav {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px; /* 增加间距 */
   align-items: center;
 }
 
