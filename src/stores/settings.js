@@ -19,6 +19,11 @@ export const useSettingsStore = defineStore('settings', () => {
   const geminiApiKey = ref('')
   const geminiModel = ref('gemini-pro')
 
+  // --- 自定义变量 ---
+  const customVars = ref([
+    { name: 'custom_var', value: '自定义值' }
+  ])
+
   // --- 持久化逻辑 ---
   const STORAGE_KEY = 'obs_settings_v1'
 
@@ -38,6 +43,11 @@ export const useSettingsStore = defineStore('settings', () => {
         if (data.geminiBaseUrl) geminiBaseUrl.value = data.geminiBaseUrl
         if (data.geminiApiKey) geminiApiKey.value = data.geminiApiKey
         if (data.geminiModel) geminiModel.value = data.geminiModel
+        
+        // 加载自定义变量
+        if (data.customVars && Array.isArray(data.customVars)) {
+          customVars.value = data.customVars
+        }
       } catch (e) {
         console.error('Failed to load settings:', e)
       }
@@ -56,7 +66,10 @@ export const useSettingsStore = defineStore('settings', () => {
       
       geminiBaseUrl: geminiBaseUrl.value,
       geminiApiKey: geminiApiKey.value,
-      geminiModel: geminiModel.value
+      geminiModel: geminiModel.value,
+      
+      // 保存自定义变量
+      customVars: customVars.value
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   }
@@ -66,7 +79,8 @@ export const useSettingsStore = defineStore('settings', () => {
     [
       volume, aiProvider, enableTools,
       openaiBaseUrl, openaiApiKey, openaiModel, 
-      geminiBaseUrl, geminiApiKey, geminiModel
+      geminiBaseUrl, geminiApiKey, geminiModel,
+      customVars
     ], 
     () => {
       saveSettings()
@@ -85,6 +99,7 @@ export const useSettingsStore = defineStore('settings', () => {
     openaiModel,
     geminiBaseUrl,
     geminiApiKey,
-    geminiModel
+    geminiModel,
+    customVars
   }
 })

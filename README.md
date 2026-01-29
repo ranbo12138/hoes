@@ -72,4 +72,4 @@ src/
 ## 📝 开发者笔记
 *   **AI 开发**：新增了 `src/api/llm.js` 和 `src/stores/settings.js`，修改 `llm.js` 可适配更多模型。
 *   **数据模型**：`girls.ts` 是核心，所有 AI 对角色的修改必须通过 `updateGirlStatus` Action 进行。
-*   **设计原则**：优先保证移动端体验，保持暗黑奇幻的视觉统一性。
+*   **设计原则**：优先保证移动端体验，保持诱惑奇幻的视觉统一性。

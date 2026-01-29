@@ -45,10 +45,24 @@
   --shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.6);
   --shadow-glow: 0 0 8px rgba(212, 175, 55, 0.3);
 
-  /* --- 字体 --- */
+/* --- 字体 --- */
   --font-main: 'Cinzel', 'Times New Roman', serif; 
   --font-ui: 'Segoe UI', Tahoma, sans-serif;
+
+  /* --- 移动端优化变量 --- */
+  --mobile-font-scale: 0.85;
+  --mobile-spacing-scale: 0.75;
+  --mobile-padding-scale: 0.8;
 }
+
+/* 移动端全局优化 */
+@media (max-width: 768px) {
+  :root {
+    --font-main: 'Cinzel', 'Times New Roman', serif;
+    --font-ui: 'Segoe UI', Tahoma, sans-serif;
+  }
+}
+</style>
 
 body {
   margin: 0;

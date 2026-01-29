@@ -1,57 +1,73 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BasePanel from './Base/BasePanel.vue'
 import BaseButton from './Base/BaseButton.vue'
-import { useSettingsStore } from '@/stores/settings'
-import { fetchModels } from '@/api/llm'
-import { PhX, PhList, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
+import { PhX, PhGear, PhRobot, PhMagicWand, PhChatText, PhBracketsCurly } from '@phosphor-icons/vue'
+import BaseSettingsTab from './Settings/BaseSettingsTab.vue'
+import AIConfigTab from './Settings/AIConfigTab.vue'
+import PresetManagerTab from './Settings/PresetManagerTab.vue'
+import PromptEditorTab from './Settings/PromptEditorTab.vue'
+import VariableManagerTab from './Settings/VariableManagerTab.vue'
+import { usePresetStore } from '@/stores/presets'
 
 const props = defineProps({
-  // 'general' | 'ai'
   panelType: {
     type: String,
-    default: 'general'
+    default: 'general' // 'general' | 'ai'
   }
 })
 
 const emit = defineEmits(['close'])
-const settings = useSettingsStore()
 
-const isLoadingModels = ref(false)
+const presetStore = usePresetStore()
+const activeTab = ref('base')
 
-const providerOptions = [
-  { value: 'openai', label: 'OpenAI 兼容模式' },
-  { value: 'gemini', label: 'Google Gemini' }
+// 所有标签页定义
+const allTabs = [
+  { id: 'base', label: '基础设置', icon: PhGear, panelType: 'general' },
+  { id: 'ai', label: 'AI 配置', icon: PhRobot, panelType: 'ai' },
+  { id: 'presets', label: '预设管理', icon: PhMagicWand, panelType: 'ai' },
+  { id: 'prompts', label: 'Prompt 编辑', icon: PhChatText, panelType: 'ai' },
+  { id: 'variables', label: '变量管理', icon: PhBracketsCurly, panelType: 'ai' }
 ]
 
-const title = computed(() => {
-  return props.panelType === 'ai' ? 'AI 连接配置' : '系统设置'
+// 根据 panelType 过滤可用的标签页
+const tabs = computed(() => {
+  if (props.panelType === 'general') {
+    return allTabs.filter(tab => tab.panelType === 'general')
+  } else {
+    return allTabs.filter(tab => tab.panelType === 'ai')
+  }
 })
+
+// 标题根据 panelType 变化
+const title = computed(() => {
+  return props.panelType === 'general' ? '系统设置' : 'AI 配置中心'
+})
+
+// 监听 panelType 变化，重置到第一个可用标签页
+watch(() => props.panelType, (newType) => {
+  const availableTabs = tabs.value
+  if (availableTabs.length > 0) {
+    activeTab.value = availableTabs[0].id
+  }
+}, { immediate: true })
 
 function close() {
   emit('close')
 }
 
-// 获取模型列表
-async function handleFetchModels(provider) {
-  isLoadingModels.value = true
-  try {
-    const models = await fetchModels(provider)
-    if (models && models.length > 0) {
-      console.log('Available Models:', models)
-      alert(`获取成功！发现 ${models.length} 个模型。\n(已打印到控制台，请手动输入或粘贴)\n\n推荐:\n` + models.slice(0, 5).join('\n'))
-    } else {
-      alert('获取成功，但未发现可用模型。')
-    }
-  } catch (e) {
-    alert('获取模型列表失败: ' + e.message)
-  } finally {
-    isLoadingModels.value = false
-  }
+function setActiveTab(tabId) {
+  activeTab.value = tabId
 }
 
-function toggleTools() {
-  settings.enableTools = !settings.enableTools
+// 处理编辑预设事件
+function handleEditPreset(preset) {
+  // 激活该预设
+  presetStore.setActivePreset(preset.id)
+  // 切换到 Prompt 编辑标签页
+  activeTab.value = 'prompts'
+  toastStore.success(`正在编辑预设: ${preset.name}`)
 }
 </script>
 
@@ -62,92 +78,34 @@ function toggleTools() {
         <PhX size="24" />
       </button>
 
-      <!-- 移除 Tabs，改为根据 panelType 直接渲染内容 -->
-      <div class="modal-content">
-        
-        <!-- 通用设置 -->
-        <div v-if="panelType === 'general'" class="settings-group">
-          <div class="form-item">
-            <label>主音量</label>
-            <input type="range" v-model="settings.volume" min="0" max="100" />
-            <span>{{ settings.volume }}%</span>
-          </div>
-        </div>
-
-        <!-- AI 设置 -->
-        <div v-if="panelType === 'ai'" class="settings-group">
-          <div class="form-item">
-            <label>API 提供商</label>
-            <select v-model="settings.aiProvider">
-              <option v-for="opt in providerOptions" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 工具调用开关 -->
-          <div class="form-item checkbox-item" @click="toggleTools">
-            <div class="checkbox-icon">
-              <PhCheckSquare v-if="settings.enableTools" size="20" weight="fill" color="var(--color-gold)" />
-              <PhSquare v-else size="20" color="var(--text-dim)" />
-            </div>
-            <div class="checkbox-label">
-              <span>允许 AI 使用工具 (Experimental)</span>
-              <small class="tip">开启后，LLM 可以读写记忆库（需模型支持 Function Calling）。</small>
-            </div>
-          </div>
-
-          <hr class="divider" />
-
-          <!-- OpenAI Form -->
-          <div v-if="settings.aiProvider === 'openai'" class="provider-form">
-            <div class="form-item">
-              <label>API Endpoint (Base URL)</label>
-              <input type="text" v-model="settings.openaiBaseUrl" placeholder="https://api.openai.com/v1" />
-            </div>
-            <div class="form-item">
-              <label>API Key</label>
-              <input type="password" v-model="settings.openaiApiKey" placeholder="sk-..." />
-            </div>
-            <div class="form-item">
-              <label>Model Name</label>
-              <div class="input-with-btn">
-                <input type="text" v-model="settings.openaiModel" placeholder="gpt-3.5-turbo" />
-                <button class="icon-btn" @click="handleFetchModels('openai')" title="获取模型列表">
-                  <PhList size="20" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Gemini Form -->
-          <div v-if="settings.aiProvider === 'gemini'" class="provider-form">
-             <div class="form-item">
-              <label>API Endpoint (Base URL)</label>
-              <input type="text" v-model="settings.geminiBaseUrl" placeholder="https://generativelanguage.googleapis.com" />
-              <small class="tip">通常无需修改，除非使用反向代理。</small>
-            </div>
-            <div class="form-item">
-              <label>API Key</label>
-              <input type="password" v-model="settings.geminiApiKey" placeholder="AIza..." />
-            </div>
-            <div class="form-item">
-              <label>Model Name</label>
-              <div class="input-with-btn">
-                <input type="text" v-model="settings.geminiModel" placeholder="gemini-pro" />
-                <button class="icon-btn" @click="handleFetchModels('gemini')" title="获取模型列表">
-                  <PhList size="20" />
-                </button>
-              </div>
-            </div>
-            <p class="tip">提示: Gemini 目前提供免费配额，适合测试。</p>
-          </div>
-        </div>
-
+      <!-- 标签页导航 -->
+      <div class="tabs-nav" v-if="tabs.length > 1">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          class="tab-button"
+          :class="{ active: activeTab === tab.id }"
+          @click="setActiveTab(tab.id)"
+        >
+          <component :is="tab.icon" size="16" />
+          <span>{{ tab.label }}</span>
+        </button>
       </div>
-      
+
+      <!-- 标签页内容 -->
+      <div class="modal-content">
+        <BaseSettingsTab v-if="activeTab === 'base'" />
+        <AIConfigTab v-if="activeTab === 'ai'" />
+        <PresetManagerTab 
+          v-if="activeTab === 'presets'" 
+          @edit-preset="handleEditPreset"
+        />
+        <PromptEditorTab v-if="activeTab === 'prompts'" />
+        <VariableManagerTab v-if="activeTab === 'variables'" />
+      </div>
+
       <div class="actions">
-        <BaseButton @click="close">保存并关闭</BaseButton>
+        <BaseButton @click="close">关闭</BaseButton>
       </div>
     </BasePanel>
   </div>
@@ -169,9 +127,10 @@ function toggleTools() {
 }
 
 .settings-modal {
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
+  width: 95%;
+  max-width: 700px;
+  height: 90vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
@@ -185,109 +144,132 @@ function toggleTools() {
   color: var(--color-gold);
   cursor: pointer;
   transition: transform 0.2s;
+  z-index: 10;
 }
+
 .close-btn:hover {
   transform: scale(1.1);
   color: #fff;
 }
 
+.tabs-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.tab-button.active {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
 .modal-content {
   flex: 1;
   overflow-y: auto;
-  padding-right: 5px;
-  margin-bottom: 20px;
-  margin-top: 10px;
+  overflow-x: hidden;
+  padding-right: 8px;
+  margin-bottom: 12px;
+  margin-top: 4px;
+  min-height: 0;
 }
 
-.settings-group {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+/* 自定义滚动条 */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
 }
 
-.form-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-item label {
-  color: var(--color-gold-dark);
-  font-size: 0.9rem;
-}
-
-.form-item input,
-.form-item select {
+.modal-content::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--color-gold-dark);
-  padding: 8px;
-  color: var(--text-main);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
-.form-item input:focus,
-.form-item select:focus {
-  border-color: var(--color-gold);
-  outline: none;
-}
-
-/* Checkbox Style */
-.checkbox-item {
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-.checkbox-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-.checkbox-label {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Input with Button */
-.input-with-btn {
-  display: flex;
-  gap: 5px;
-}
-.input-with-btn input {
-  flex: 1;
-}
-.icon-btn {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--color-gold-dark);
-  color: var(--color-gold);
-  padding: 0 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.icon-btn:hover {
+.modal-content::-webkit-scrollbar-thumb {
   background: var(--color-gold-dark);
-  color: #000;
+  border-radius: 3px;
 }
 
-.divider {
-  border: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 10px 0;
-}
-
-.tip {
-  font-size: 0.75rem;
-  color: var(--text-dim);
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
 }
 
 .actions {
   display: flex;
   justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .settings-modal {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .close-btn {
+    top: 12px;
+    right: 12px;
+  }
+
+  .tabs-nav {
+    margin-bottom: 12px;
+    padding-bottom: 2px;
+    gap: 2px;
+  }
+
+  .tab-button {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    border-radius: 3px 3px 0 0;
+  }
+
+  .tab-button span {
+    font-size: 0.75rem;
+  }
+
+  .modal-content {
+    padding-right: 4px;
+    margin-bottom: 12px;
+    margin-top: 4px;
+  }
+
+  .actions {
+    padding-top: 8px;
+    gap: 8px;
+  }
+
+  .actions button {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
 }
 </style>
