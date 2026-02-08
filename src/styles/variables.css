@@ -1,0 +1,77 @@
+:root {
+  /* --- 调色板 Palette --- */
+  
+  /* 金色系 - 更加古老/暗淡 */
+  --color-gold-light: #FFD700;
+  --color-gold: #C5A028;       /* 降低饱和度，更像旧金 */
+  --color-gold-dark: #8A6E18;
+  --color-gold-shadow: #2A1F05;
+
+  /* 红色系 - 猩红/血色 */
+  --color-red: #8B0000;
+  --color-red-light: #B22222;
+  --color-red-dark: #500000;
+
+  /* 紫色系 - 深渊/虚空 */
+  --color-purple-deep: #0D0518; /* 更黑的紫 */
+  --color-purple-dark: #1F0F33;
+  --color-purple-light: #3D1C66;
+  --color-purple-glow: #9D4EDD;
+
+  /* 文本颜色 */
+  --text-main: #E0E0E0;        /* 略微带灰，不刺眼 */
+  --text-gold: #E6C256;
+  --text-dim: #7A7285;
+  --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+
+  /* --- 语义化变量 Semantic --- */
+  --color-primary: var(--color-gold);
+  --color-secondary: var(--color-purple-light);
+  --color-accent: var(--color-red);
+  
+  --bg-main: var(--color-purple-deep);
+  --bg-panel: rgba(13, 5, 24, 0.92); /* 更深，接近不透明 */
+  --bg-panel-light: rgba(31, 15, 51, 0.85);
+
+  /* --- 尺寸变量 --- */
+  --header-height: 60px; /* 增加高度给 HUD */
+  
+  /* --- 边框与装饰 --- */
+  --border-width: 1px;
+  --border-radius-sm: 2px; /* 锐利化 */
+  --border-radius-md: 4px;
+  
+  /* 魔法边框风格 */
+  --border-magic: 1px solid var(--color-gold-dark);
+  --border-glow: 0 0 0 1px rgba(197, 160, 40, 0.3);
+  
+  /* --- 阴影 --- */
+  --shadow-text: 0 2px 4px rgba(0, 0, 0, 0.9);
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 12px rgba(197, 160, 40, 0.2);
+  --shadow-inset: inset 0 0 20px rgba(0, 0, 0, 0.8);
+
+  /* --- 字体 --- */
+  --font-main: 'Cinzel', serif; 
+  --font-ui: 'Cinzel', 'Segoe UI', serif; /* UI 也倾向于使用 Cinzel */
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  overflow-x: hidden; /* 防止移动端横向滚动 */
+}
+
+/* 简单的响应式调整 */
+@media (min-width: 768px) {
+  :root {
+    --border-width: 2px;
+  }
+  body {
+    font-size: 16px;
+  }
+}

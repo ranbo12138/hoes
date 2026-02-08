@@ -1,0 +1,70 @@
+@import './variables.css';
+
+/* 全局重置与基础样式 */
+:root {
+  --safe-top: env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  /* 禁止手机端长按选中文本 (提升游戏感) */
+  -webkit-user-select: none;
+  user-select: none;
+  /* 去除移动端点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 允许输入框内选择文本 */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+  font-family: var(--font-ui);
+}
+
+body {
+  /* 确保 iOS 滚动回弹效果更像原生 */
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--bg-main);
+  position: relative;
+}
+
+/* --- 全局噪点纹理 (Noise Texture) --- */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03; /* 非常微弱的噪点 */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* --- 滚动条样式 --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-gold-dark);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+button {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main);
+  text-shadow: var(--shadow-text);
+  margin: 0;
+}
