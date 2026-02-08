@@ -250,6 +250,7 @@ function close() {
   border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* 添加滚动 */
 }
 
 .empty-state {
