@@ -5,12 +5,20 @@ import BaseButton from '@/components/Base/BaseButton.vue'
 import { useMarketStore } from '@/stores/market'
 import { useGirlsStore } from '@/stores/girls'
 import { useGameStore } from '@/stores/game'
-import { 
-  PhFlask, 
-  PhWine, 
-  PhLockKey, 
+import {
+  PhFlask,
+  PhWine,
+  PhLockKey,
   PhHouseLine,
-  PhCoins
+  PhCoins,
+  PhFire,
+  PhDrop,
+  PhDress,
+  PhBook,
+  PhShield,
+  PhSparkle,
+  PhCookie,
+  PhLightning
 } from '@phosphor-icons/vue'
 
 const emit = defineEmits(['close'])
@@ -28,7 +36,15 @@ const selectedTargetId = ref('')
 const iconMap = {
   'potion_vitality': PhFlask,
   'wine_vintage': PhWine,
+  'incense_dream': PhFire,
+  'elixir_corruption': PhDrop,
   'collar_leather': PhLockKey,
+  'silk_lingerie': PhDress,
+  'book_seduction': PhBook,
+  'amulet_protection': PhShield,
+  'perfume_luxury': PhSparkle,
+  'chocolate_dark': PhCookie,
+  'whip_discipline': PhLightning,
   'contract_expansion': PhHouseLine
 }
 
