@@ -66,6 +66,7 @@ defineProps({
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
   z-index: 1;
   transition: all 0.3s ease;
+  pointer-events: none; /* 不拦截点击事件 */
 }
 
 /* 2. 内容层 */
@@ -83,6 +84,7 @@ defineProps({
   text-transform: uppercase;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
   transition: color 0.3s ease;
+  pointer-events: none; /* 不拦截点击事件 */
 }
 
 /* 3. 边框层 (伪装) */
@@ -94,6 +96,7 @@ defineProps({
   z-index: 0; /* 最底层，作为边框颜色 */
   opacity: 0.6;
   transition: opacity 0.3s ease;
+  pointer-events: none; /* 不拦截点击事件 */
 }
 
 /* --- 交互状态 --- */
